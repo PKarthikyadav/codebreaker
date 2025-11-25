@@ -1,0 +1,122 @@
+⭐ Q3 — Monitoring Tool: Nagios in Docker
+
+We will use official Nagios XI or Nagios Core Docker image depending on what's easiest.
+The most common fully working image is:
+
+👉 jasonrivers/nagios
+
+It is widely used in labs and works instantly.
+
+🟩 STEP 1 — Pull Nagios Docker Image
+docker pull jasonrivers/nagios
+
+
+This image includes:
+
+Nagios Core
+
+Apache web UI
+
+Default monitoring services (CPU, RAM, Uptime, Ping)
+
+🟩 STEP 2 — Run Nagios Container
+docker run -d \
+  --name nagios \
+  -p 8080:80 \
+  jasonrivers/nagios
+
+
+This maps:
+
+Container port 80 → host port 8080
+
+So you can access Nagios at:
+
+👉 http://localhost:8080/nagios
+
+🟩 STEP 3 — Default Login Credentials
+
+Nagios default credentials:
+
+username: nagiosadmin
+password: nagios
+
+
+If this doesn't work, use:
+
+nagiosadmin / nagiosadmin
+
+🟩 STEP 4 — Access Nagios Web Interface
+
+Open your browser:
+
+👉 http://localhost:8080/nagios/
+
+(or sometimes just: http://localhost:8080
+)
+
+Login → you will see the Nagios Monitoring Dashboard.
+
+🟩 STEP 5 — Show CPU, Memory, Service Uptime
+
+Once logged in:
+
+Go to Monitoring
+
+Click Service Detail
+
+You will see:
+
+CPU Load
+
+Memory Usage
+
+Swap Usage
+
+Uptime
+
+Localhost checks
+
+HTTP, SSH service checks
+
+These pages are perfect for screenshots.
+
+📸 Take a screenshot of this page for your exam.
+
+⭐ FULL COMMAND ANSWER SHEET (write this in exam)
+1. Pull image
+docker pull jasonrivers/nagios
+
+2. Run container
+docker run -d --name nagios -p 8080:80 jasonrivers/nagios
+
+3. Access the dashboard
+
+Open browser:
+
+http://localhost:8080/nagios
+
+
+Login:
+
+username: nagiosadmin
+password: nagios
+
+4. View monitoring
+
+Navigate:
+
+Services → Host → localhost
+
+
+You will see:
+
+CPU load
+
+Memory usage
+
+Disk usage
+
+Service uptime
+
+HTTP, SSH check results
