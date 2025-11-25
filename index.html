@@ -1,24 +1,233 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>sanjaya</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="script.js">
-</head>
-<body>
-    
-    <img  src="kmit sanjaya image.jpg" class="demo" alt="fuck you" >
-    <div class="feel">
-        <label for="username" class="user">*Mobile Number:</label>
-        <br>
-        <input id ='pass' type="text" placeholder="Enter your Mobile Number" id="username" required><br>
-        <label for="password">*Password:</label>
-        <br>
-        <input type="password" placeholder="Password" id="password" required>
-        <button type="submit" class="button-sign">sign in</button>
-    </div>
+Step 1: Open a terminal
 
-</body>
-</html>
+Run these commands EXACTLY:
+docker network create jnet
+
+docker run -d --name tomcat --network jnet -p 8888:8080 tomcat:9.0
+
+docker run -d --name jenkins --network jnet -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home jenkins/jenkins:lts
+
+PART 2 — Create Tomcat manager user
+
+We must give Tomcat a username/password so Jenkins can deploy.
+
+Run:
+
+docker exec -it tomcat bash
+
+printf '<role rolename="manager-gui"/>\n<role rolename="manager-script"/>\n<user username="admin" password="admin" roles="manager-gui,manager-script"/>\n' >> /usr/local/tomcat/conf/tomcat-users.xml
+
+exit
+
+docker restart tomcat
+
+step:3
+
+create a repo named webapp in GitHub
+
+in cmd:
+
+mkdir webapp
+
+cd webapp
+
+notepad pom.xml
+
+paste this:
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.exam</groupId>
+    <artifactId>webapp</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+</project>
+
+step 4:
+
+mkdir src
+mkdir src\main
+mkdir src\main\webapp
+
+
+Run:
+
+notepad src\main\webapp\index.jsp
+
+Paste this:
+
+<h1>Hello from Jenkins Deployment!</h1>
+<p>This is the simplest app ever.</p>
+<p>Time: <%= new java.util.Date() %></p>
+
+
+Run:
+
+notepad Jenkinsfile(not txt)
+
+
+Paste this EXACT Jenkinsfile:
+
+pipeline {
+    agent { docker { image 'maven:3.8.8-openjdk-17' } }
+
+    environment {
+        TOMCAT_URL = 'http://tomcat:8080/manager/text'
+        APP_CONTEXT = 'myapp'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/PKarthikyadav/webapp.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn -B clean package'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'tomcat-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh '''
+                        WAR=$(ls target/*.war)
+                        curl -u $USER:$PASS "$TOMCAT_URL/undeploy?path=/$APP_CONTEXT" || true
+                        curl -u $USER:$PASS -T $WAR "$TOMCAT_URL/deploy?path=/$APP_CONTEXT&update=true"
+                    '''
+                }
+            }
+        }
+    }
+}
+
+run:
+
+git init
+git add .
+git commit -m "initial commit"
+git branch -M main
+git remote add origin https://github.com/PKarthikyadav/webapp.git
+git push -u origin main
+
+
+step 5:
+
+go to http://localhost:8080
+
+the pass is got by ruuning this in cmd(if asked):docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+
+
+Install suggested plugins
+✔ Create admin user (or skip and keep admin/admin)
+
+⭐ PART 2 — Add credentials for Tomcat
+
+In Jenkins:
+
+Click Manage Jenkins
+
+Click Credentials
+
+Click System
+
+Click Global Credentials (unrestricted)
+
+Click Add Credentials
+
+Fill like this:
+
+Kind: Username with password
+
+Username: admin
+
+Password: admin
+
+ID: tomcat-creds
+
+Description: Tomcat deployment user
+
+Click Create.
+
+
+step 6:
+
+Go to Jenkins home page
+
+Click New Item
+
+Name: webapp-pipeline
+
+Select Pipeline
+
+Click OK
+
+Scroll down to the Pipeline section:
+
+Definition: Pipeline script from SCM
+
+SCM: Git
+
+Repository URL: https://github.com/PKarthikyadav/webapp.git
+
+
+Branch: main
+
+Credentials: leave empty because your repo is public
+
+Click Save
+
+Click Build Now.
+
+Open:
+
+👉 http://localhost:8888/myapp
+
+You should see:
+
+Hello from Jenkins Deployment!
+Time: ...
+
+
+On the left menu click Manage Jenkins.
+
+On the Manage Jenkins page click Manage Plugins.
+
+In the Plugins page click the Available tab (it may take a moment to load the list).
+
+In the Filter box (top right of the plugin list) type:
+Blue Ocean
+
+In the search results check the box next to Blue Ocean (the entry is usually named Blue Ocean).
+
+Jenkins will automatically select Blue Ocean and several dependent plugins (Panel will show the list).
+
+Click Install without restart (preferred) or Download now and install after restart.
+
+If you choose Install without restart, watch the progress at the bottom.
+
+If Jenkins asks for safe restart later, allow it.
+
+Wait until the install finishes. If it says Restart required, click Restart Jenkins when installation is complete and no jobs are running or restart Jenkins manually.
+
+After installation & restart, return to the Jenkins home page.
+
+Open Blue Ocean and view your pipeline
+
+On the Jenkins left sidebar you should now see Open Blue Ocean (sometimes under a dropdown or as a new left nav item).
+
+If you don't see it, open this URL (replace host if different):
+http://localhost:8080/blue
+
+Click Open Blue Ocean (or visit /blue). Blue Ocean will load its UI.
+
+In Blue Ocean you’ll see a list of pipelines (or a button Create a new pipeline). Find your pipeline named webapp-pipeline and click it.
+
+Blue Ocean will show the pipeline runs in a visual stage graph. Click the latest run to expand console logs and step details.
+
+
