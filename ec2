@@ -19,6 +19,11 @@ cd imp
 
 # 7) (Create or edit) Dockerfile — you used nano in your session
 nano Dockerfile
+
+content:
+FROM nginx:alpine
+COPY . usr/share/nginx/html
+
 # ← add the Dockerfile contents, save and exit
 
 # 8) Build the Docker image
